@@ -5,7 +5,8 @@ set -e
 SSH_CONFIG="$HOME/.ssh/config"
 HOST_ENTRY="Host raspberrypi
     HostName raspberrypi.local
-    User travisbumgarner"
+    User travisbumgarner
+    IdentitiesOnly yes"
 
 # Ensure ~/.ssh exists
 mkdir -p "$HOME/.ssh"
@@ -22,3 +23,9 @@ if ! grep -q "Host raspberrypi" "$SSH_CONFIG"; then
 else
     echo "SSH config entry for raspberrypi already exists. Skipping."
 fi
+
+echo "Generating SSH key..."
+ssh-keygen -t ed25519 -C "vscode pi login"
+
+echo "Copying SSH key to Raspberry Pi..."
+ssh-copy-id travisbumgarner@raspberrypi.local
