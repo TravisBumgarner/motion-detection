@@ -13,5 +13,6 @@ Then files can be accessed on the local network via
 
 raspberrypi.local:8000
 
-
 https://www.raspberrypi.com/documentation/computers/camera_software.html
+
+https://tsmith.com/blog/2024/motion-activated-camera/
