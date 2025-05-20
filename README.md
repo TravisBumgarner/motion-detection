@@ -17,7 +17,7 @@ Host raspberrypi
 
 1. Copy ssh key to raspberry pi
 
-``
+```
 ssh-keygen -t ed25519 -C "vscode pi login"
 ssh-copy-id travisbumgarner@raspberrypi.local
 
@@ -26,9 +26,11 @@ ssh-copy-id travisbumgarner@raspberrypi.local
 1. Connect to Raspberry Pi
     - `ssh raspberrypi`
 
+
 ### Raspberry Pi
 
+1. Setup GitHub
+   - Clone repo `git clone git@github.com:TravisBumgarner/motion-detection.git`
 1. Bootstrap
-   - Clone repo `git clone https://github.com/TravisBumgarner/motion-detection.git`
-   - `make bootstrap-rasppi`
+   - `make bootstrap`
 ```
