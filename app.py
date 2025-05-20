@@ -65,6 +65,7 @@ def index():
                   const date = new Date(data.timestamp_last_detected * 1000);
                   textContent += ' at ' + date.toLocaleTimeString();
                 }
+                statusDiv.textContent = textContent;
                 statusDiv.style.color = data.detected ? 'red' : 'green';
               })
               .catch(() => {
