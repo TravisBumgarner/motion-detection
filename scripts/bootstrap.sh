@@ -4,10 +4,9 @@ sudo apt full-upgrade -y
 # sudo apt install python3-picamera2 python3-opencv -y
 
 libcamera-hello --list-cameras
+sudo apt install python3-picamera2 --no-install-recommends
 
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+pip3 install -r requirements.txt --break-system-packages
 
 echo "Setting up SSH keys..."
 ssh-keygen -t ed25519 -C "rasppi"

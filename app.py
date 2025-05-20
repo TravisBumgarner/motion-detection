@@ -8,16 +8,21 @@ camera = Picamera2()
 camera.configure(camera.create_video_configuration(main={"size": (640, 480)}))
 camera.start()
 
+
 def gen():
     while True:
         frame = camera.capture_array()
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        ret, jpeg = cv2.imencode('.jpg', frame)
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n')
+        ret, jpeg = cv2.imencode(".jpg", frame)
+        yield (
+            b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg.tobytes() + b"\r\n"
+        )
 
-@app.route('/video_feed')
+
+@app.route("/video_feed")
 def video_feed():
-    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
-app.run(host='0.0.0.0', port=5000)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
