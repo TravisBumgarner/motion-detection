@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 help:
 	@echo "Makefile for managing the project"
 	@echo "Usage:"
