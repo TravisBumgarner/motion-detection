@@ -1,0 +1,5 @@
+- [ ] Track paths over time overlayed over video.
+- [ ] Write Readme.
+- [ ] Way to generate new sessions.
+  - Perhaps like /video_feed?save=true
+- [ ] Get code running on device.
