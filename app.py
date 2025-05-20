@@ -3,13 +3,14 @@ from flask import Flask, Response, jsonify
 from picamera2 import Picamera2
 import cv2
 import numpy as np
+import time
 
 app = Flask(__name__)
 camera = Picamera2()
 camera.configure(camera.create_video_configuration(main={"size": (640, 480)}))
 camera.start()
 
-motion_status = {"detected": False}
+motion_status = {"detected": False, "timestamp_last_detected": None}
 
 
 def gen():
@@ -24,6 +25,7 @@ def gen():
         if result > 0.3:
             detected_motion = True
             motion_status["detected"] = True
+            motion_status["timestamp_last_detected"] = time.time()
         else:
             detected_motion = False
             motion_status["detected"] = False
@@ -58,7 +60,11 @@ def index():
               .then(response => response.json())
               .then(data => {
                 const statusDiv = document.getElementById('motion-status');
-                statusDiv.textContent = 'Motion status: ' + (data.detected ? 'Detected' : 'Not detected');
+                let textContent = 'Motion status: ' + (data.detected ? 'Detected' : 'Not detected');
+                if (data.timestamp_last_detected){
+                  const date = new Date(data.timestamp_last_detected * 1000);
+                  textContent += ' at ' + date.toLocaleTimeString();
+                }
                 statusDiv.style.color = data.detected ? 'red' : 'green';
               })
               .catch(() => {
