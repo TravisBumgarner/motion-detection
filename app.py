@@ -26,10 +26,15 @@ def gen():
             print("Started recording.")
             detected_motion = True
         if detected_motion:
-            out.write(frame)
-            frame_rec_count = frame_rec_count + 1
-    if (cv2.waitKey(1) & 0xFF == ord("q")) or frame_rec_count == 240:
-        break
+            ret, jpeg = cv2.imencode(".jpg", frame)
+            yield (
+                b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
+                + jpeg.tobytes()
+                + b"\r\n"
+            )
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
 
 
 @app.route("/video_feed")
