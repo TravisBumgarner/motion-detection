@@ -18,5 +18,5 @@ sync:
 
 server:
 	@echo "Starting the server..."
-	@source ~/Desktop/motion-detection/.venv/bin/activate
+	@. source ~/Desktop/motion-detection/.venv/bin/activate
 	@python3 -m flask run --host=0.0.0.0 --port=5000
