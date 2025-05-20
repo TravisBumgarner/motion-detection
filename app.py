@@ -1,9 +1,10 @@
 # install with: pip install flask picamera2
-from flask import Flask, Response, jsonify
+from flask import Flask, Response, jsonify, send_from_directory, request
 from picamera2 import Picamera2
 import cv2
 import numpy as np
 import time
+import os
 
 app = Flask(__name__)
 camera = Picamera2()
@@ -11,6 +12,9 @@ camera.configure(camera.create_video_configuration(main={"size": (640, 480)}))
 camera.start()
 
 motion_status = {"detected": False, "timestamp_last_detected": None}
+
+IMAGE_DIR = "motion_images"
+os.makedirs(IMAGE_DIR, exist_ok=True)
 
 
 def gen():
@@ -26,6 +30,10 @@ def gen():
             detected_motion = True
             motion_status["detected"] = True
             motion_status["timestamp_last_detected"] = time.time()
+            # Save image with timestamp
+            filename = f"motion_{int(time.time())}.jpg"
+            filepath = os.path.join(IMAGE_DIR, filename)
+            cv2.imwrite(filepath, frame)
         else:
             detected_motion = False
             motion_status["detected"] = False
@@ -83,6 +91,35 @@ def index():
 @app.route("/status")
 def status():
     return jsonify(motion_status)
+
+
+@app.route("/images")
+def images():
+    if request.args.get("delete") == "yes":
+        for f in os.listdir(IMAGE_DIR):
+            os.remove(os.path.join(IMAGE_DIR, f))
+        return "<html><body><h2>All images deleted.</h2><a href='/images'>Back</a></body></html>"
+    files = sorted(os.listdir(IMAGE_DIR))
+    if not files:
+        return "<html><body><h2>No images found.</h2></body></html>"
+    idx = int(request.args.get("idx", 0))
+    idx = max(0, min(idx, len(files) - 1))
+    img_file = files[idx]
+    html = f"""
+    <html><body>
+    <h2>Motion Images ({idx + 1} of {len(files)})</h2>
+    <img src='/images/file/{img_file}' width='640' /><br/>
+    <a href='/images?idx={max(idx - 1, 0)}'>&larr; Prev</a>
+    <a href='/images?idx={min(idx + 1, len(files) - 1)}'>Next &rarr;</a><br/>
+    <a href='/images?delete=yes' style='color:red;'>Delete All Images</a>
+    </body></html>
+    """
+    return html
+
+
+@app.route("/images/file/<filename>")
+def image_file(filename):
+    return send_from_directory(IMAGE_DIR, filename)
 
 
 if __name__ == "__main__":
