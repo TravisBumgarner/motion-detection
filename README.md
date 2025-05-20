@@ -4,8 +4,31 @@ Flask server running on a Raspberry Pi, using the Camera Module 3 to track and s
 
 ## Local Development
 
+### Laptop
+
+1. Append the following to ~/.ssh/config
+
+```
+Host raspberrypi
+    HostName raspberrypi.local
+    User travisbumgarner
+    IdentitiesOnly yes
+```
+
+1. Copy ssh key to raspberry pi
+
+``
+ssh-keygen -t ed25519 -C "vscode pi login"
+ssh-copy-id travisbumgarner@raspberrypi.local
+
+```
+
+1. Connect to Raspberry Pi
+    - `ssh raspberrypi`
+
+### Raspberry Pi
+
 1. Bootstrap
-   - `make bootstrap`
-1. Reload VS Code
-1. Connect to RaspberryPi
-   - `Cmd+Shift+P` -> `Remote-SSH: Connect to Host...`
+   - Clone repo `git clone https://github.com/TravisBumgarner/motion-detection.git`
+   - `make bootstrap-rasppi`
+```
