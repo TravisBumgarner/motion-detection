@@ -1,5 +1,6 @@
 - [ ] Track paths over time overlayed over video.
-- [ ] Write Readme.
-- [ ] Way to generate new sessions.
+- [x] Write Readme.
+- [ ] Way to generate new sessions such as when I want to place the camera somewhere else.
+- [ ] Object detection.
   - Perhaps like /video_feed?save=true
-- [ ] Get code running on device.
+- [x] Get code running on device.
