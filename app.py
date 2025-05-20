@@ -14,8 +14,7 @@ def gen():
     detected_motion = False
     last_mean = 0
     while True:
-        ret, frame = camera.read()
-        cv2.imshow("frame", frame)
+        frame = camera.capture_array()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         result = np.abs(np.mean(gray) - last_mean)
         print(result)
