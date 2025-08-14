@@ -4,3 +4,4 @@
 - [ ] Object detection.
   - Perhaps like /video_feed?save=true
 - [x] Get code running on device.
+- [ ] Autorun on startup
