@@ -54,7 +54,7 @@ sudo ./bootstrap.sh
 ```
 
 The bootstrap script will:
-- Install system dependencies (python3, ffmpeg, libcamera-apps, git)
+- Install system dependencies (python3, python3-picamera2, ffmpeg, libcamera-apps, git)
 - Create a Python virtual environment
 - Write default configuration to `/etc/motion-cam/.env`
 - Install and enable the systemd service
