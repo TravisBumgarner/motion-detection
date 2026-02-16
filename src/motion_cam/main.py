@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import signal
+import threading
 import time
 from datetime import datetime
 
@@ -9,6 +10,8 @@ from motion_cam.camera import CameraService
 from motion_cam.config import load_config
 from motion_cam.detector import MotionDetector
 from motion_cam.recorder import Recorder
+from motion_cam.storage import StorageManager
+from motion_cam.web import create_app
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,6 +25,17 @@ def main() -> None:
     camera = CameraService(config.camera)
     detector = MotionDetector(config.detection)
     recorder = Recorder(camera, config.storage, config.detection)
+    storage = StorageManager(config.storage)
+
+    # Start Flask web server in a background thread
+    app = create_app(storage, config.web, data_dir=config.storage.data_dir)
+    web_thread = threading.Thread(
+        target=app.run,
+        kwargs={"host": config.web.host, "port": config.web.port},
+        daemon=True,
+    )
+    web_thread.start()
+    logger.info("Web portal started on %s:%d", config.web.host, config.web.port)
 
     shutdown = False
 
@@ -36,7 +50,10 @@ def main() -> None:
     camera.start()
     logger.info("Motion detector started")
 
+    storage.enforce_retention()
+
     last_motion_time = 0.0
+    last_retention_check = time.time()
 
     try:
         while not shutdown:
@@ -60,6 +77,11 @@ def main() -> None:
                     recorder.stop_recording()
 
             recorder.check_max_duration()
+
+            # Periodic retention check (every 10 minutes)
+            if time.time() - last_retention_check >= 600:
+                storage.enforce_retention()
+                last_retention_check = time.time()
 
             # Sleep to maintain approximate frame rate
             time.sleep(1.0 / config.camera.framerate)
