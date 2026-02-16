@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import time
 from pathlib import Path
 
@@ -47,6 +48,16 @@ class Recorder:
 
         self._recording = False
         self._camera.stop_recording()
+
+        # Generate thumbnail from video (frame at 0.5s)
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-i", self._mp4_path,
+                "-ss", "0.5", "-frames:v", "1",
+                self._thumb_path,
+            ],
+            capture_output=True,
+        )
 
     def check_max_duration(self) -> None:
         if not self._recording:
