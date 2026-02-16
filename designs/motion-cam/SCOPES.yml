@@ -230,7 +230,7 @@ tasks:
       - Tests use a temporary directory with fixture files
     depends_on: [4]
     effort: 2
-    status: implementing
+    status: completed
 
   - id: 6
     milestone: 2
