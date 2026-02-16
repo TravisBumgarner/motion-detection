@@ -63,6 +63,12 @@ class StorageManager:
 
         return True
 
+    def delete_all_clips(self) -> int:
+        clips = self.get_clips()
+        for clip in clips:
+            self.delete_clip(clip.timestamp)
+        return len(clips)
+
     def enforce_retention(self) -> None:
         self._enforce_age_retention()
         self._enforce_size_retention()

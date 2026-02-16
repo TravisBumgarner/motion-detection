@@ -30,7 +30,12 @@ class CameraService:
         lores = {"size": self._config.lores_resolution, "format": "YUV420"}
         video_config = self._picam2.create_video_configuration(main, lores=lores)
         self._picam2.configure(video_config)
-        self._picam2.set_controls({"FrameRate": self._config.framerate})
+        from libcamera import controls
+
+        self._picam2.set_controls({
+            "FrameRate": self._config.framerate,
+            "AfMode": controls.AfModeEnum.Continuous,
+        })
         self._picam2.start()
 
     def stop(self) -> None:

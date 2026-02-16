@@ -57,6 +57,27 @@ class TestApiClips:
         assert len(data) <= 20
 
 
+class TestApiDeleteAllClips:
+    def test_deletes_all_clips(self, client):
+        """DELETE /api/clips should remove all clips and return count."""
+        resp = client.delete("/api/clips")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["status"] == "deleted"
+        assert data["count"] == 3
+
+    def test_returns_zero_when_no_clips(self, tmp_path):
+        """DELETE /api/clips should return count 0 when no clips exist."""
+        storage_config = StorageConfig(data_dir=str(tmp_path))
+        manager = StorageManager(storage_config)
+        web_config = WebConfig()
+        app = create_app(manager, web_config, data_dir=str(tmp_path))
+        app.config["TESTING"] = True
+        resp = app.test_client().delete("/api/clips")
+        assert resp.status_code == 200
+        assert resp.get_json()["count"] == 0
+
+
 class TestApiDeleteClip:
     def test_deletes_existing_clip(self, client, tmp_path):
         """DELETE /api/clips/<timestamp> should remove the clip and return 200."""
