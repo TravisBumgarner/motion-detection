@@ -273,7 +273,7 @@ tasks:
       - Web server runs in a thread alongside the detection loop
     depends_on: [5]
     effort: 3
-    status: implementing
+    status: completed
 
   - id: 7
     milestone: 3

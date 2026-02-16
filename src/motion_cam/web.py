@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import asdict
 
 from flask import Flask, abort, jsonify, render_template_string, request, send_from_directory
@@ -136,6 +137,15 @@ def _relative_path(absolute_path: str, data_dir: str) -> str:
     return absolute_path
 
 
+_TIMESTAMP_RE = re.compile(r"^\d{8}_\d{6}$")
+
+
+def _validate_timestamp(timestamp: str) -> None:
+    """Abort 404 if timestamp doesn't match expected YYYYMMDD_HHMMSS format."""
+    if not _TIMESTAMP_RE.match(timestamp):
+        abort(404)
+
+
 def create_app(
     storage_manager: StorageManager,
     web_config: WebConfig,
@@ -166,6 +176,7 @@ def create_app(
 
     @app.route("/clip/<timestamp>")
     def clip_detail(timestamp: str):
+        _validate_timestamp(timestamp)
         clip = storage_manager.get_clip(timestamp)
         if clip is None:
             abort(404)
@@ -198,6 +209,7 @@ def create_app(
 
     @app.route("/api/clips/<timestamp>", methods=["DELETE"])
     def api_delete_clip(timestamp: str):
+        _validate_timestamp(timestamp)
         deleted = storage_manager.delete_clip(timestamp)
         if not deleted:
             abort(404)
