@@ -15,30 +15,34 @@ Built for detecting cockroaches in low-light conditions using IR-compatible came
 
 ### 1. Flash Raspberry Pi OS
 
-1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
-2. Flash **Raspberry Pi OS Lite (64-bit)** to your microSD card
-3. In the imager settings (gear icon), configure:
-   - Hostname (e.g. `motioncam`)
-   - Enable SSH
-   - Set username/password
-   - Configure WiFi
-4. Insert the card and boot the Pi
+1. Download [Raspberry Pi Imager](https://www.raspberrypi.com/software/) (v2.0.6+)
+2. Choose **Raspberry Pi OS Lite (64-bit)** -- the Lite version (no desktop) is important, the Pi Zero 2 W only has 512MB RAM
+3. In the imager settings, configure:
+   - Hostname: `motioncam`
+   - Enable SSH (password authentication)
+   - Username: `motioncam`, set a password
+   - Configure WiFi -- **must be a 2.4 GHz network** (the Pi Zero 2 W does not support 5 GHz)
+   - Set WiFi country code
+4. Write the image to your microSD card
 
-### 2. Enable the Camera
+### 2. Connect to the Pi
 
-SSH into the Pi and enable the camera interface:
-
-```bash
-sudo raspi-config
-```
-
-Navigate to **Interface Options > Camera** and enable it. Reboot when prompted.
-
-Verify the camera is detected:
+Insert the card into the Pi and power it on. **First boot takes 3-5 minutes** -- cloud-init needs to configure the system and install packages. Be patient.
 
 ```bash
-libcamera-hello --list-cameras
+# Connect using the defaults above
+ssh motioncam@motioncam.local
+
+# If mDNS isn't working yet, check your router's admin page for
+# connected devices, or look for the Pi in your ARP table:
+arp -a                     # look for a new IP that wasn't there before
+ssh motioncam@<ip-address>
 ```
+
+**Troubleshooting:**
+- **"No route to host"** -- the Pi is still booting, wait another minute
+- **Pi not appearing at all** -- verify your WiFi is 2.4 GHz (not 5 GHz), double-check SSID/password, and re-flash if needed
+- **mDNS not resolving** -- avahi-daemon may still be installing on first boot, try by IP address instead
 
 ### 3. Install motion-cam
 
@@ -49,12 +53,22 @@ sudo ./bootstrap.sh
 ```
 
 The bootstrap script will:
-- Install system dependencies (python3, ffmpeg, etc.)
+- Install system dependencies (python3, ffmpeg, libcamera-apps, git)
 - Create a Python virtual environment
 - Prompt you for configuration (detection sensitivity, storage location, etc.)
 - Install and enable the systemd service
 
-### 4. Start the Service
+### 4. Verify the Camera
+
+The camera is enabled by default on newer Raspberry Pi OS. After bootstrap, verify it's detected:
+
+```bash
+libcamera-hello --list-cameras
+```
+
+If no cameras are found, check the ribbon cable connection and make sure it's seated firmly on both ends.
+
+### 5. Start the Service
 
 ```bash
 sudo systemctl start motion-cam
@@ -66,11 +80,11 @@ View logs:
 sudo journalctl -u motion-cam -f
 ```
 
-The web portal is available at `http://<pi-hostname>:8080`.
+The web portal is available at `http://motioncam.local:8080`.
 
-### 5. Verify It Works
+### 6. Verify It Works
 
-1. Open `http://<pi-hostname>:8080` in a browser
+1. Open `http://motioncam.local:8080` in a browser
 2. Wave your hand in front of the camera
 3. After a few seconds, a clip should appear in the gallery
 
