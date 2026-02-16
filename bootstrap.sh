@@ -48,7 +48,7 @@ check_root() {
 install_system_deps() {
     log_info "Installing system dependencies..."
     apt-get update -qq
-    apt-get install -y python3 python3-pip python3-venv ffmpeg libcamera-apps git
+    apt-get install -y python3 python3-pip python3-venv python3-picamera2 ffmpeg libcamera-apps git
     log_info "System dependencies installed"
 }
 
