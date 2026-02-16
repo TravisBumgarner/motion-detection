@@ -164,7 +164,7 @@ tasks:
       - Tests use synthetic numpy arrays with simulated shadows and motion
     depends_on: [1]
     effort: 2
-    status: implementing
+    status: completed
 
   - id: 4
     milestone: 1
