@@ -56,7 +56,7 @@ sudo ./bootstrap.sh
 The bootstrap script will:
 - Install system dependencies (python3, ffmpeg, libcamera-apps, git)
 - Create a Python virtual environment
-- Prompt you for configuration (detection sensitivity, storage location, etc.)
+- Write default configuration to `/etc/motion-cam/.env`
 - Install and enable the systemd service
 
 ### 4. Verify the Camera
@@ -64,7 +64,7 @@ The bootstrap script will:
 The camera is enabled by default on newer Raspberry Pi OS. After bootstrap, verify it's detected:
 
 ```bash
-libcamera-hello --list-cameras
+rpicam-hello --list-cameras
 ```
 
 If no cameras are found, check the ribbon cable connection and make sure it's seated firmly on both ends.

@@ -81,42 +81,9 @@ setup_config() {
         return
     fi
 
-    if [[ -t 0 ]]; then
-        # Interactive mode: prompt for each variable
-        log_info "Interactive configuration (press Enter to accept defaults)"
-        echo ""
-
-        local tmp_env
-        tmp_env=$(mktemp)
-
-        while IFS= read -r line; do
-            # Pass through comments and blank lines
-            if [[ "$line" =~ ^#.*$ ]] || [[ -z "$line" ]]; then
-                echo "$line" >> "$tmp_env"
-                continue
-            fi
-
-            # Parse KEY=VALUE
-            local key="${line%%=*}"
-            local default_val="${line#*=}"
-
-            read -r -p "  ${key} [${default_val}]: " user_val
-            if [[ -n "$user_val" ]]; then
-                echo "${key}=${user_val}" >> "$tmp_env"
-            else
-                echo "${key}=${default_val}" >> "$tmp_env"
-            fi
-        done < "${ENV_EXAMPLE}"
-
-        mv "$tmp_env" "${ENV_FILE}"
-        echo ""
-        log_info "Configuration saved to ${ENV_FILE}"
-    else
-        # Non-interactive: copy example and warn
-        cp "${ENV_EXAMPLE}" "${ENV_FILE}"
-        log_warn "Non-interactive mode: copied .env.example to ${ENV_FILE}"
-        log_warn "Edit ${ENV_FILE} to customize settings"
-    fi
+    cp "${ENV_EXAMPLE}" "${ENV_FILE}"
+    log_info "Default configuration written to ${ENV_FILE}"
+    log_info "Edit with: sudo nano ${ENV_FILE}"
 
     chmod 600 "${ENV_FILE}"
 }
