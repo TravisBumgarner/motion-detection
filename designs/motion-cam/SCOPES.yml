@@ -89,7 +89,7 @@ tasks:
       - Tests verify config defaults and env var override behavior
     depends_on: []
     effort: 1
-    status: testing
+    status: implementing
 
   - id: 2
     milestone: 1
