@@ -117,7 +117,7 @@ tasks:
       - Camera service is mockable via a protocol/abstract base
     depends_on: [1]
     effort: 2
-    status: scoped
+    status: completed
 
   - id: 3
     milestone: 1
