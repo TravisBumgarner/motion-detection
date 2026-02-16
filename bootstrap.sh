@@ -57,7 +57,7 @@ setup_venv() {
     log_info "Setting up Python virtual environment..."
 
     if [[ ! -d "${SCRIPT_DIR}/.venv" ]]; then
-        python3 -m venv "${SCRIPT_DIR}/.venv"
+        python3 -m venv --system-site-packages "${SCRIPT_DIR}/.venv"
         log_info "Virtual environment created"
     else
         log_info "Virtual environment already exists"
