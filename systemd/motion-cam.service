@@ -1,0 +1,15 @@
+[Unit]
+Description=Motion-Activated Camera for Cockroach Detection
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory={{INSTALL_DIR}}
+ExecStart={{INSTALL_DIR}}/.venv/bin/python -m motion_cam.main
+EnvironmentFile=/etc/motion-cam/.env
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
