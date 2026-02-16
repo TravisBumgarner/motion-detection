@@ -81,6 +81,24 @@ class TestDeleteClip:
         assert manager.delete_clip("99990101_000000") is False
 
 
+class TestDeleteAllClips:
+    def test_deletes_all_clips_and_returns_count(self, tmp_path):
+        """Should delete every clip and return the count deleted."""
+        _create_clip(tmp_path, "20260210_100000")
+        _create_clip(tmp_path, "20260215_120000")
+        manager = _make_manager(tmp_path)
+
+        count = manager.delete_all_clips()
+
+        assert count == 2
+        assert manager.get_clips() == []
+
+    def test_returns_zero_when_no_clips(self, tmp_path):
+        """Should return 0 when there are no clips to delete."""
+        manager = _make_manager(tmp_path)
+        assert manager.delete_all_clips() == 0
+
+
 class TestEnforceRetention:
     def test_deletes_clips_exceeding_max_disk_usage(self, tmp_path):
         """When total size exceeds max_disk_usage_mb, oldest clips are deleted first."""

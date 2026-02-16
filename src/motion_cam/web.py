@@ -34,7 +34,16 @@ GALLERY_TEMPLATE = """\
 </head>
 <body>
 <h1>Motion Cam</h1>
-<nav><a href="/">Gallery</a> <a href="/status">Status</a></nav>
+<nav>
+  <a href="/">Gallery</a> <a href="/status">Status</a>
+  <button onclick="deleteAll()" style="background:#c33;color:#fff;border:none;border-radius:4px;padding:0.3rem 0.8rem;cursor:pointer;font-size:0.85rem;">Delete All</button>
+</nav>
+<script>
+function deleteAll() {
+  if (!confirm('Delete ALL clips? This cannot be undone.')) return;
+  fetch('/api/clips', {method: 'DELETE'}).then(function(r) { return r.json(); }).then(function() { location.reload(); });
+}
+</script>
 <div class="grid">
 {% for clip in clips %}
   <div class="card">
@@ -206,6 +215,11 @@ def create_app(
         start = (page - 1) * CLIPS_PER_PAGE
         end = start + CLIPS_PER_PAGE
         return jsonify([asdict(c) for c in all_clips[start:end]])
+
+    @app.route("/api/clips", methods=["DELETE"])
+    def api_delete_all_clips():
+        count = storage_manager.delete_all_clips()
+        return jsonify({"status": "deleted", "count": count})
 
     @app.route("/api/clips/<timestamp>", methods=["DELETE"])
     def api_delete_clip(timestamp: str):
