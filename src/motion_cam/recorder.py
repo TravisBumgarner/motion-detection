@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import subprocess
 import time
 from pathlib import Path
 
@@ -20,7 +19,6 @@ class Recorder:
         self._detection_config = detection_config
         self._recording = False
         self._start_time: float = 0.0
-        self._h264_path: str = ""
         self._mp4_path: str = ""
         self._thumb_path: str = ""
 
@@ -34,12 +32,12 @@ class Recorder:
         date_dir = Path(self._storage_config.data_dir) / date_str
         date_dir.mkdir(parents=True, exist_ok=True)
 
-        self._h264_path = str(date_dir / f"{timestamp}.h264")
         self._mp4_path = str(date_dir / f"{timestamp}.mp4")
         self._thumb_path = str(date_dir / f"{timestamp}_thumb.jpg")
         snap_path = str(date_dir / f"{timestamp}_snap.jpg")
 
         self._camera.capture_snapshot(snap_path)
+        self._camera.start_recording(self._mp4_path)
         self._start_time = time.time()
         self._recording = True
 
@@ -48,27 +46,7 @@ class Recorder:
             return
 
         self._recording = False
-
-        # Convert H264 to MP4
-        subprocess.run(
-            ["ffmpeg", "-y", "-i", self._h264_path, "-c", "copy", self._mp4_path],
-            capture_output=True,
-        )
-
-        # Generate thumbnail from video (frame at 0.5s)
-        subprocess.run(
-            [
-                "ffmpeg", "-y", "-i", self._mp4_path,
-                "-ss", "0.5", "-frames:v", "1",
-                self._thumb_path,
-            ],
-            capture_output=True,
-        )
-
-        # Clean up raw H264 file
-        h264 = Path(self._h264_path)
-        if h264.exists():
-            h264.unlink()
+        self._camera.stop_recording()
 
     def check_max_duration(self) -> None:
         if not self._recording:

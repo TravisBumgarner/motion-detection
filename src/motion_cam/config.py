@@ -69,7 +69,7 @@ def load_config() -> Config:
     )
 
     storage = StorageConfig(
-        data_dir=env.get("STORAGE_DATA_DIR", _default_data_dir()),
+        data_dir=os.path.expanduser(env.get("STORAGE_DATA_DIR", _default_data_dir())),
         max_age_days=int(env.get("STORAGE_MAX_AGE_DAYS", "7")),
         max_disk_usage_mb=int(env.get("STORAGE_MAX_DISK_USAGE_MB", "4096")),
     )
