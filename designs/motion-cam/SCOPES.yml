@@ -201,7 +201,7 @@ tasks:
       - Graceful shutdown on SIGINT/SIGTERM
     depends_on: [2, 3]
     effort: 3
-    status: implementing
+    status: completed
 
   - id: 5
     milestone: 2
