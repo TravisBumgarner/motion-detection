@@ -47,6 +47,7 @@ ssh motioncam@<ip-address>
 ### 3. Install motion-cam
 
 ```bash
+sudo apt-get update && sudo apt-get install -y git
 git clone https://github.com/TravisBumgarner/motion-detection.git
 cd motion-detection
 sudo ./bootstrap.sh
