@@ -1,0 +1,327 @@
+project: motion-cam
+design_file: designs/motion-cam/DESIGN.md
+scoping_date: 2026-02-15
+
+milestones:
+  - number: 1
+    title: "1. Core Detection & Recording"
+    description: |
+      Set up the project, implement camera capture, motion detection, and
+      video/snapshot recording. At the end of this milestone the system can
+      detect motion and save MP4 clips + JPEG snapshots to disk.
+    branch:
+      working: milestone-1-core-detection
+      base: main
+
+  - number: 2
+    title: "2. Storage & Web Portal"
+    description: |
+      Add storage management with retention policies and build the Flask
+      web portal for browsing, viewing, and managing captured clips.
+    branch:
+      working: milestone-2-web-portal
+      base: milestone-1-core-detection
+
+  - number: 3
+    title: "3. Deployment"
+    description: |
+      Create systemd service and install script for headless auto-start
+      on the Raspberry Pi Zero 2 W.
+    branch:
+      working: milestone-3-deployment
+      base: milestone-2-web-portal
+
+tasks:
+  - id: 1
+    milestone: 1
+    title: "Scaffold project structure and environment-based config"
+    description: |
+      Create the Python project layout with requirements.txt, source package,
+      and an environment-variable-based configuration loader. Follows the
+      rasppi-utils pattern (env vars loaded from .env file via
+      EnvironmentFile in systemd).
+
+      **Project structure:**
+      ```
+      motion-cam/
+        requirements.txt          # Python deps
+        config/
+          .env.example            # config template with all vars + comments
+        systemd/
+          motion-cam.service      # systemd unit with {{INSTALL_DIR}} placeholder
+        src/
+          motion_cam/
+            __init__.py
+            config.py             # loads env vars with defaults
+            main.py               # entry point
+        tests/
+          __init__.py
+          test_config.py
+      ```
+
+      **requirements.txt** should list:
+      - numpy
+      - opencv-python-headless
+      - flask
+      - python-dotenv
+
+      Note: picamera2 is pre-installed on Raspberry Pi OS and should NOT
+      be in requirements.txt (it can't be pip-installed on dev machines).
+
+      **config/.env.example** contains all settings with comments explaining
+      each variable. See design doc for the full list.
+
+      **config.py** reads environment variables with sensible defaults.
+      Uses `os.environ.get()` with defaults — no YAML, no external config
+      file loading. Returns a dataclass for structured access. For local
+      development, `python-dotenv` can load a `.env` file; in production
+      the systemd `EnvironmentFile` directive handles it.
+
+      **systemd/motion-cam.service** is a template unit file with
+      `{{INSTALL_DIR}}` placeholders, `EnvironmentFile=/etc/motion-cam/.env`,
+      `Type=simple`, `Restart=on-failure`, `RestartSec=10`.
+    acceptance_criteria:
+      - requirements.txt lists all Python dependencies
+      - config.py reads env vars and returns a typed config dataclass with defaults
+      - All config values from the design doc are represented as env vars
+      - config/.env.example documents every variable with comments
+      - systemd/motion-cam.service template uses {{INSTALL_DIR}} placeholder
+      - Tests verify config defaults and env var override behavior
+    depends_on: []
+    effort: 1
+    status: completed
+
+  - id: 2
+    milestone: 1
+    title: "Implement camera service with dual-stream capture"
+    description: |
+      Create a camera service module that wraps picamera2 for dual-stream
+      operation (low-res for detection, main for recording).
+
+      **src/motion_cam/camera.py:**
+      - `CameraService` class that initializes picamera2 with video config:
+        - Main stream: configurable resolution (default 1280x720), H264
+        - Low-res stream: configurable resolution (default 320x240), YUV420
+        - Frame rate: configurable (default 15 FPS)
+      - `start()` / `stop()` methods for camera lifecycle
+      - `capture_lores_frame()` returns the Y channel as a numpy array
+      - `capture_snapshot(path)` captures a JPEG from the main stream
+      - Camera runs headless (no preview)
+
+      The camera module should accept configuration from the config object
+      (task 1). Use a protocol/interface so tests can mock the camera.
+    acceptance_criteria:
+      - CameraService initializes picamera2 with dual-stream config
+      - capture_lores_frame returns a numpy array of the Y channel
+      - capture_snapshot saves a JPEG to the given path
+      - Camera service is mockable via a protocol/abstract base
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 3
+    milestone: 1
+    title: "Implement motion detection engine with shadow filtering"
+    description: |
+      Create the motion detection module using OpenCV's MOG2 background
+      subtractor with shadow detection and contour-based filtering.
+      This approach reliably distinguishes real moving objects from shadows,
+      gradual lighting changes, and camera noise.
+
+      **src/motion_cam/detector.py:**
+      - `MotionDetector` class that:
+        - Initializes an OpenCV MOG2 background subtractor with
+          `detectShadows=True`
+        - Takes a grayscale frame (numpy array) via `process_frame(frame)`
+        - Processing pipeline per frame:
+          1. Apply Gaussian blur (configurable kernel size, default 21)
+          2. Feed into MOG2 background subtractor
+          3. Threshold the foreground mask to remove shadow pixels
+             (MOG2 marks shadows as 127, foreground as 255 — keep only 255)
+          4. Apply morphological operations (erode then dilate) to clean noise
+          5. Find contours in the cleaned mask
+          6. Filter contours by `min_contour_area` (default 500 pixels)
+        - Returns a `MotionEvent`:
+          - `detected`: True if any contour exceeds min area
+          - `contour_count`: number of qualifying contours
+          - `largest_area`: area of the largest contour (useful for tuning)
+
+      **Configurable parameters** (from config object):
+      - `min_contour_area` (default 500): minimum pixel area for a contour
+        to count as motion
+      - `blur_kernel_size` (default 21): Gaussian blur kernel size
+      - `learning_rate` (default -1): MOG2 background learning rate
+        (-1 = automatic)
+
+      The detection logic depends only on numpy and opencv-python-headless,
+      no picamera2 dependency, making it fully testable on any platform.
+    acceptance_criteria:
+      - MotionDetector uses MOG2 background subtractor with shadow detection
+      - Shadows are filtered out and do not trigger motion detection
+      - Small noise/specks below min_contour_area do not trigger detection
+      - Real motion (object moving across frames) triggers detection correctly
+      - Returns contour count and largest area for diagnostics
+      - Tests use synthetic numpy arrays with simulated shadows and motion
+    depends_on: [1]
+    effort: 2
+    status: scoped
+
+  - id: 4
+    milestone: 1
+    title: "Implement recording pipeline with MP4 conversion"
+    description: |
+      Create the recording module that captures H264 video clips on motion,
+      converts them to MP4, and saves snapshots and thumbnails.
+
+      **src/motion_cam/recorder.py:**
+      - `Recorder` class that:
+        - `start_recording(timestamp)`: starts H264 encoder on the camera's
+          main stream, captures a JPEG snapshot
+        - `stop_recording()`: stops encoder, converts H264 → MP4 via
+          `ffmpeg -i input.h264 -c copy output.mp4`, generates a thumbnail
+          from the video (ffmpeg: extract frame at 0.5s), cleans up .h264 file
+        - Respects `max_clip_duration` config — auto-stops if exceeded
+        - Files saved to `{data_dir}/YYYY-MM-DD/{timestamp}.mp4`,
+          `{timestamp}_snap.jpg`, `{timestamp}_thumb.jpg`
+
+      **src/motion_cam/main.py:**
+      - Main loop that ties camera, detector, and recorder together:
+        1. Capture lores frame
+        2. Run through detector
+        3. If motion detected and not recording → start recording
+        4. If no motion and recording and cooldown elapsed → stop recording
+        5. Sleep briefly to maintain target frame rate
+      - Graceful shutdown on SIGINT/SIGTERM
+    acceptance_criteria:
+      - Recorder starts/stops H264 encoding via the camera service
+      - H264 files are converted to MP4 using ffmpeg subprocess
+      - Thumbnail is generated from the video
+      - Max clip duration is enforced
+      - Main loop integrates camera, detector, and recorder correctly
+      - Graceful shutdown on SIGINT/SIGTERM
+    depends_on: [2, 3]
+    effort: 3
+    status: scoped
+
+  - id: 5
+    milestone: 2
+    title: "Implement storage manager with retention policies"
+    description: |
+      Create a storage management module that organizes recorded files
+      and enforces retention limits.
+
+      **src/motion_cam/storage.py:**
+      - `StorageManager` class that:
+        - `get_clips()`: scans data directory, returns list of clip metadata
+          (path, timestamp, duration, file size) sorted newest-first
+        - `get_clip(timestamp)`: returns metadata for a specific clip
+        - `delete_clip(timestamp)`: removes all files for a clip
+        - `enforce_retention()`: deletes oldest clips when:
+          - Total disk usage exceeds `max_disk_usage_mb`
+          - Clips are older than `max_age_days`
+        - `get_disk_usage()`: returns total bytes used by data directory
+
+      Retention enforcement should be called periodically from the main
+      loop (e.g., every 10 minutes) and at startup.
+    acceptance_criteria:
+      - get_clips returns sorted list of clip metadata from the data directory
+      - delete_clip removes all associated files (mp4, snapshot, thumbnail)
+      - enforce_retention deletes oldest clips exceeding age or size limits
+      - Tests use a temporary directory with fixture files
+    depends_on: [4]
+    effort: 2
+    status: scoped
+
+  - id: 6
+    milestone: 2
+    title: "Build Flask web portal with gallery and video player"
+    description: |
+      Create a Flask web application for browsing and viewing captured clips.
+
+      **src/motion_cam/web.py** (Flask app factory):
+
+      **Pages:**
+      - `GET /` — Gallery page: grid of thumbnails with timestamps, paginated
+        (20 per page). Each thumbnail links to the detail view.
+      - `GET /clip/<timestamp>` — Detail view: HTML5 video player for the MP4,
+        snapshot image, metadata (timestamp, duration, file size).
+      - `GET /status` — Status page: detector state, disk usage, uptime,
+        total clip count.
+
+      **API endpoints:**
+      - `GET /api/clips?page=1` — JSON list of clips with metadata
+      - `DELETE /api/clips/<timestamp>` — Delete a clip and its files
+      - `GET /api/status` — JSON status info
+
+      **Static file serving:**
+      - Serve MP4, JPEG files from the data directory
+      - Minimal CSS for responsive grid layout (no JS framework needed)
+      - Should work well on mobile browsers
+
+      **Templates:**
+      - Use Jinja2 templates with inline CSS (minimal dependencies)
+      - Responsive design using CSS grid
+
+      Flask runs in a separate thread from the main detection loop.
+      No authentication (local network only).
+    acceptance_criteria:
+      - Gallery page shows thumbnails in a responsive grid, paginated
+      - Detail page plays video and shows snapshot with metadata
+      - Status page shows disk usage and detector state
+      - API endpoints return correct JSON and handle deletion
+      - Static files (MP4, JPEG) are served from the data directory
+      - Web server runs in a thread alongside the detection loop
+    depends_on: [5]
+    effort: 3
+    status: scoped
+
+  - id: 7
+    milestone: 3
+    title: "Create bootstrap.sh for one-command Pi setup"
+    description: |
+      Create an idempotent bootstrap script following the rasppi-utils
+      pattern. Running `sudo ./bootstrap.sh` on a fresh Pi should get
+      the entire system up and running.
+
+      **bootstrap.sh** (run with `sudo ./bootstrap.sh`):
+      1. Check root privileges, exit with helpful message if not root
+      2. Install system dependencies: `python3`, `python3-pip`,
+         `python3-venv`, `ffmpeg`
+      3. Create Python venv at `./.venv` (skip if already exists)
+      4. Upgrade pip, install from `requirements.txt`
+      5. Create config directory at `/etc/motion-cam/` (chmod 755)
+      6. Interactive config prompting:
+         - If stdin is a terminal (`[[ -t 0 ]]`), read `.env.example`
+           and prompt user for each variable with defaults shown
+         - If non-interactive, copy `.env.example` to `/etc/motion-cam/.env`
+           and warn user to edit manually
+         - Skip prompting if `/etc/motion-cam/.env` already exists
+         - Set `.env` file to chmod 600
+      7. Ensure the invoking user (via `$SUDO_USER`) is in the `video`
+         group for camera access
+      8. Create data directory (from config or default
+         `/home/$SUDO_USER/motion-cam-data`)
+      9. Install systemd unit: copy `systemd/motion-cam.service` to
+         `/etc/systemd/system/`, replace `{{INSTALL_DIR}}` with actual
+         repo path via `sed`
+      10. `systemctl daemon-reload && systemctl enable motion-cam`
+      11. Print success message with next steps:
+          - How to start: `sudo systemctl start motion-cam`
+          - How to view logs: `sudo journalctl -u motion-cam -f`
+          - Web portal URL: `http://<hostname>:8080`
+
+      **Style:** Color-coded output (green INFO, yellow WARN, red ERROR).
+      Fully idempotent — safe to run multiple times.
+
+      The systemd unit template is already created in task 1. This task
+      only creates `bootstrap.sh`.
+    acceptance_criteria:
+      - bootstrap.sh installs all system and Python dependencies
+      - Prompts for config interactively, or copies .env.example if non-interactive
+      - Preserves existing config (does not re-prompt if .env exists)
+      - Installs systemd unit with {{INSTALL_DIR}} replacement
+      - Idempotent — safe to run multiple times without side effects
+      - Prints clear next-steps message on completion
+    depends_on: [6]
+    effort: 2
+    status: scoped
