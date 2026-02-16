@@ -324,4 +324,4 @@ tasks:
       - Prints clear next-steps message on completion
     depends_on: [6]
     effort: 2
-    status: scoped
+    status: implementing
