@@ -28,7 +28,7 @@ def main() -> None:
     storage = StorageManager(config.storage)
 
     # Start Flask web server in a background thread
-    app = create_app(storage, config.web, data_dir=config.storage.data_dir)
+    app = create_app(storage, config.web, data_dir=config.storage.data_dir, camera=camera)
     web_thread = threading.Thread(
         target=app.run,
         kwargs={"host": config.web.host, "port": config.web.port},

@@ -89,6 +89,10 @@ The web portal is available at `http://motioncam.local:8080`.
 2. Wave your hand in front of the camera
 3. After a few seconds, a clip should appear in the gallery
 
+## Camera Tuner
+
+A built-in live-preview tool for experimenting with camera settings (focus, brightness, contrast, saturation, sharpness, exposure) in real time. Available at `http://motioncam.local:8080/tuner` while motion-cam is running. The tuner runs alongside motion detection -- no need to stop the service.
+
 ## How It Works
 
 ```
@@ -143,6 +147,7 @@ sudo systemctl restart motion-cam
 - **Gallery** (`/`) -- Thumbnail grid of captured clips, paginated, newest first
 - **Clip detail** (`/clip/<timestamp>`) -- Video player with snapshot and metadata
 - **Status** (`/status`) -- Disk usage and clip count
+- **Tuner** (`/tuner`) -- Live camera feed with adjustable image controls and focus
 
 **API:**
 - `GET /api/clips?page=1` -- JSON list of clips
@@ -166,7 +171,7 @@ motion-cam/
       detector.py            # MOG2 motion detection
       recorder.py            # H264 recording + ffmpeg conversion
       storage.py             # clip management + retention
-      web.py                 # Flask web portal
+      web.py                 # Flask web portal + camera tuner
       main.py                # main loop + signal handling
   tests/
     test_config.py

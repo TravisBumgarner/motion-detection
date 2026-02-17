@@ -131,3 +131,37 @@ class TestMediaServing:
         """The app should serve MP4 files from the data directory."""
         resp = client.get("/media/2026-02-15/20260215_140000.mp4")
         assert resp.status_code == 200
+
+
+class TestTunerPage:
+    def test_tuner_returns_html(self, client):
+        """GET /tuner should return an HTML page even without a camera."""
+        resp = client.get("/tuner")
+        assert resp.status_code == 200
+        assert b"Camera Tuner" in resp.data
+
+    def test_tuner_stream_returns_503_without_camera(self, client):
+        """GET /tuner/stream should return 503 when no camera is available."""
+        resp = client.get("/tuner/stream")
+        assert resp.status_code == 503
+
+    def test_tuner_control_returns_503_without_camera(self, client):
+        """POST /api/tuner/control should return 503 when no camera."""
+        resp = client.post(
+            "/api/tuner/control",
+            json={"brightness": 0.5},
+        )
+        assert resp.status_code == 503
+
+    def test_tuner_af_mode_returns_503_without_camera(self, client):
+        """POST /api/tuner/af_mode should return 503 when no camera."""
+        resp = client.post(
+            "/api/tuner/af_mode",
+            json={"af_mode": "continuous"},
+        )
+        assert resp.status_code == 503
+
+    def test_tuner_trigger_af_returns_503_without_camera(self, client):
+        """POST /api/tuner/trigger_af should return 503 when no camera."""
+        resp = client.post("/api/tuner/trigger_af")
+        assert resp.status_code == 503
