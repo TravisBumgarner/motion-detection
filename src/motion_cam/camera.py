@@ -49,6 +49,20 @@ class CameraService:
         buf = self._picam2.capture_array("lores")
         return buf[:h, :w]
 
+    def capture_jpeg_frame(self) -> bytes:
+        import io
+
+        from PIL import Image
+
+        arr = self._picam2.capture_array("main")
+        img = Image.fromarray(arr)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=80)
+        return buf.getvalue()
+
+    def set_controls(self, controls: dict) -> None:
+        self._picam2.set_controls(controls)
+
     def capture_snapshot(self, path: str) -> None:
         self._picam2.capture_file(path)
 
